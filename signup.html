@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iWant PC - Sign Up</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="signup">
+    <div class="login-container">
+        <div class="login-header">
+            <img src="pc.png" alt="iWant PC logo" class="login-logo">
+            <h2>Create Account</h2>
+            <p>Please enter your details to register</p>
+        </div>
+
+        <form class="login-form" id="signupForm">
+            <div class="input-group">
+                <label for="fullname">Full Name</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user field-icon"></i>
+                    <input type="text" id="fullname" placeholder="John Doe" autocomplete="name" required>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="email">Email Address</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-envelope field-icon"></i>
+                    <input type="email" id="email" placeholder="name@example.com" autocomplete="email" required>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock field-icon"></i>
+                    <input type="password" id="password" placeholder="Create a password" autocomplete="new-password" required>
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="confirm-password">Confirm Password</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-shield-halved field-icon"></i>
+                    <input type="password" id="confirm-password" placeholder="Confirm your password" autocomplete="new-password" required>
+                </div>
+            </div>
+            <div class="form-actions">
+                <label class="remember-me"><input type="checkbox" id="terms" required><span>I agree to the <a href="#" class="link">Terms &amp; Conditions</a></span></label>
+            </div>
+            <p class="form-msg" id="formMsg" role="alert"></p>
+            <button type="submit" class="btn-submit">Sign Up</button>
+        </form>
+
+        <div class="login-footer">
+            <p>Already have an account? <a href="login.html">Sign in</a></p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
