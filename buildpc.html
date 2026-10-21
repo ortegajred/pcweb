@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Build Your PC - iWant PC</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style1.css">
+</head>
+<body data-page="pc-builder">
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="brand-logo"><img src="iwantpc1.jpg" alt="iWant PC logo" class="nav-logo"></a>
+
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="searchInput" placeholder="Search components, laptops, gear..." aria-label="Search products">
+            </div>
+
+            <nav class="nav-links">
+                <a href="home.html#products" class="nav-link"><i class="fa-solid fa-store"></i> Products</a>
+                <a href="buildpc.html" class="nav-link active"><i class="fa-solid fa-screwdriver-wrench"></i> Build Your Own PC</a>
+                <a href="home.html#services-booking" class="nav-link"><i class="fa-solid fa-shield-halved"></i> Services &amp; Booking</a>
+
+                <button class="cart-btn" id="openCartBtn" aria-label="View cart">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </button>
+
+                <div class="user-menu-wrapper">
+                    <button class="user-btn" id="userMenuBtn" aria-haspopup="true">
+                        <i class="fa-solid fa-circle-user"></i><span>Account</span><i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="userDropdown">
+                        <div class="dropdown-header">
+                            <p class="user-name" id="userName"></p>
+                            <p class="user-email" id="userEmail"></p>
+                        </div>
+                        <hr class="dropdown-divider">
+                        <a href="myorders.html"><i class="fa-solid fa-box-archive"></i> My Orders</a>
+                        <a href="accountsetting.html"><i class="fa-solid fa-sliders"></i> Settings</a>
+                        <hr class="dropdown-divider">
+                        <a href="login.html" class="logout-link" data-logout><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="page page-lg">
+        <a href="home.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Catalog</a>
+
+        <div class="builder-layout">
+            <section>
+                <div class="card">
+                    <h2><i class="fa-solid fa-screwdriver-wrench"></i> Custom PC Configurator</h2>
+                    <p style="margin-bottom: 24px;">Choose your components below. Parts that will not work with what you already picked are greyed out, and the panel on the right checks sockets, memory and power as you go.</p>
+
+                    <!-- one group per category is generated from the products table -->
+                    <div id="builderGroups"></div>
+
+                    <label class="field" style="margin-top: 20px;">
+                        <span>Assembly or Special Requests</span>
+                        <textarea id="buildNotes" rows="3" placeholder="e.g. Please install Windows 11, cable management preferences, RGB color scheme..."></textarea>
+                    </label>
+                </div>
+            </section>
+
+            <aside>
+                <div class="card summary-card">
+                    <h2><i class="fa-solid fa-list-check"></i> Build Summary</h2>
+
+                    <div class="wattage-meter">
+                        <div class="row"><span><i class="fa-solid fa-bolt"></i> Estimated draw</span><strong id="totalWatts">0 W</strong></div>
+                        <div class="row"><span>Recommended PSU</span><strong id="recWatts">--</strong></div>
+                        <div class="meter"><div class="meter-fill" id="meterFill"></div></div>
+                        <div class="meter-label" id="meterLabel">Pick a power supply to see headroom</div>
+                    </div>
+
+                    <ul class="compat-list" id="compatList"></ul>
+
+                    <div id="selectedPartsList" style="margin-bottom: 12px;">
+                        <p class="hint">No components selected yet.</p>
+                    </div>
+
+                    <div class="summary-row"><span>Components Cost</span><span id="buildSubtotal">$0.00</span></div>
+                    <div class="summary-row" id="assemblyRow"><span>Assembly &amp; testing</span><span>$50.00</span></div>
+                    <label class="assembly-opt"><input type="checkbox" id="assemblyToggle" checked> Include assembly &amp; stress test</label>
+                    <div class="summary-row total-row"><span>Total Price</span><span id="buildTotal">$0.00</span></div>
+                    <p class="hint" style="margin: 8px 0 0;">Tax and shipping are added at checkout.</p>
+
+                    <button class="btn btn-primary btn-block" style="margin-top: 20px;" id="addBuildBtn">
+                        <i class="fa-solid fa-cart-plus"></i> Add Build to Cart
+                    </button>
+                    <button class="btn btn-outline btn-block" style="margin-top: 10px;" id="bookConsultBtn">
+                        <i class="fa-solid fa-calendar-check"></i> Book Consultation
+                    </button>
+                    <button class="btn btn-outline btn-block" style="margin-top: 10px;" id="resetBuildBtn">
+                        <i class="fa-solid fa-rotate-left"></i> Clear selection
+                    </button>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <div class="cart-overlay" id="cartOverlay"></div>
+    <aside class="cart-drawer" id="cartDrawer" aria-label="Shopping cart">
+        <div class="cart-header">
+            <h3>Your Shopping Cart</h3>
+            <button class="close-cart-btn" id="closeCartBtn" aria-label="Close cart">&times;</button>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-footer">
+            <div class="summary-row"><span>Subtotal</span><span id="cartSubtotal">$0.00</span></div>
+            <div class="summary-row"><span>Estimated Tax (8%)</span><span id="cartTax">$0.00</span></div>
+            <div class="summary-row total-row"><span>Total</span><span id="cartTotal">$0.00</span></div>
+            <button class="btn btn-primary btn-block" id="checkoutBtn">Proceed to Checkout</button>
+            <p class="cart-note">Shipping is added at checkout.</p>
+        </div>
+    </aside>
+
+    <footer id="footer"></footer>
+    <script src="script.js"></script>
+</body>
+</html>

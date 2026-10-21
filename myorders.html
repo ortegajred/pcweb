@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iWant PC - My Orders</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style1.css">
+</head>
+<body data-page="orders">
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="brand-logo"><img src="iwantpc1.jpg" alt="iWant PC logo" class="nav-logo"></a>
+            <div class="page-title"><i class="fa-solid fa-box-archive"></i> My Purchase History</div>
+        </div>
+    </header>
+    <main class="page page-md">
+        <a href="home.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Store</a>
+        <div class="order-tabs" id="orderTabs">
+            <button class="tab-btn active" data-tab="all">All</button>
+            <button class="tab-btn" data-tab="pending">Pending Payment</button>
+            <button class="tab-btn" data-tab="toship">To Ship</button>
+            <button class="tab-btn" data-tab="toreceive">To Receive</button>
+            <button class="tab-btn" data-tab="completed">Completed</button>
+        </div>
+        <div class="orders-list" id="ordersList"></div>
+    </main>
+    <footer id="footer"></footer>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iWant PC - Account Settings</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style1.css">
+</head>
+<body data-page="settings">
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="brand-logo"><img src="iwantpc1.jpg" alt="iWant PC logo" class="nav-logo"></a>
+            <div class="page-title"><i class="fa-solid fa-sliders"></i> Account Settings</div>
+        </div>
+    </header>
+    <main class="page page-sm">
+        <a href="home.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Store</a>
+
+        <section class="card">
+            <h2><i class="fa-solid fa-user-pen"></i> Personal Information</h2>
+            <form id="profileForm">
+                <div class="form-row">
+                    <label class="field"><span>Username</span><input type="text" name="username" required></label>
+                    <label class="field"><span>Full Name</span><input type="text" name="name" required></label>
+                </div>
+                <div class="form-row">
+                    <label class="field"><span>Email Address</span><input type="email" name="email" required></label>
+                    <label class="field"><span>Contact Number</span><input type="tel" name="phone" required></label>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Save Changes</button>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2><i class="fa-solid fa-location-dot"></i> Default Shipping Address</h2>
+            <form id="addressForm">
+                <label class="field"><span>Street Address, Barangay, Apt / Suite</span><input type="text" name="address" required></label>
+                <div class="form-row">
+                    <label class="field"><span>City / Municipality</span><input type="text" name="city" required></label>
+                    <label class="field"><span>Postal / Zip Code</span><input type="text" name="zip" required></label>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Update Address</button>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2><i class="fa-solid fa-shield-halved"></i> Change Password</h2>
+            <form id="passwordForm">
+                <label class="field"><span>Current Password</span><input type="password" name="current" autocomplete="current-password" required></label>
+                <div class="form-row">
+                    <label class="field"><span>New Password</span><input type="password" name="next" autocomplete="new-password" required></label>
+                    <label class="field"><span>Confirm New Password</span><input type="password" name="confirm" autocomplete="new-password" required></label>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fa-solid fa-key"></i> Update Password</button>
+            </form>
+        </section>
+    </main>
+    <footer id="footer"></footer>
+    <script src="script.js"></script>
+</body>
+</html>

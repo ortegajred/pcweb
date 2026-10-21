@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iWant PC - Staff Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style1.css">
+</head>
+<body data-page="staff" class="plain">
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="staff.html" class="brand-logo"><img src="iwantpc1.jpg" alt="iWant PC logo" class="nav-logo"><span>Staff Operations Panel</span></a>
+            <a href="login.html" class="btn btn-sm btn-logout" data-logout><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
+        </div>
+    </header>
+
+    <main class="page page-lg">
+        <div class="metrics">
+            <div class="metric-card"><h3>Total Items</h3><div class="metric-value" id="mItems">0</div></div>
+            <div class="metric-card"><h3>Total Sale</h3><div class="metric-value" id="mSale">$0.00</div></div>
+            <div class="metric-card"><h3>Total Booking</h3><div class="metric-value" id="mBookings">0</div></div>
+            <div class="metric-card"><h3>Reports Generated</h3><div class="metric-value" id="mReports">0</div></div>
+        </div>
+
+        <section class="card">
+            <div class="section-head">
+                <h2>Order Fulfillment Queue</h2>
+                <button class="btn btn-sm btn-soft" id="reportBtn"><i class="fa-solid fa-file-arrow-down"></i> Generate Report</button>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total Price</th><th>Status</th><th>When to Receive</th><th>Action / Proof</th></tr></thead>
+                    <tbody id="queueBody"></tbody>
+                </table>
+            </div>
+            <input type="file" id="proofInput" accept="image/*" hidden>
+        </section>
+
+        <section class="card">
+            <div class="section-head">
+                <h2>Product Inventory &amp; Pricing Management</h2>
+                <div class="inventory-tools">
+                    <select class="edit-input" id="inventoryCategory" aria-label="Filter by category"></select>
+                    <input class="edit-input" type="search" id="inventorySearch" placeholder="Search products or specs..." aria-label="Search products">
+                    <button class="btn btn-sm btn-soft" id="addProductBtn"><i class="fa-solid fa-plus"></i> Add component</button>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Image</th><th>Product</th><th>Category</th><th>Specs</th><th>Stock</th><th>Price ($)</th><th>Actions</th></tr></thead>
+                    <tbody id="inventoryBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Add / edit component. The spec fields below are generated from the chosen category (see SPEC_FIELDS in script.js). -->
+    <dialog class="modal" id="productModal" aria-labelledby="modalTitle">
+        <form class="modal-form" id="productForm">
+            <div class="modal-head">
+                <h2 id="modalTitle">Add component</h2>
+                <button type="button" class="close-cart-btn" data-close aria-label="Close">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="image-field">
+                    <img class="image-preview" id="imagePreview" alt="Product image preview">
+                    <div class="image-controls">
+                        <span class="label">Product image</span>
+                        <div class="btn-row">
+                            <label class="btn btn-sm btn-soft"><i class="fa-solid fa-upload"></i> Upload image<input type="file" id="imageFile" accept="image/*" hidden></label>
+                            <button type="button" class="btn btn-sm btn-outline danger" id="imageClear"><i class="fa-solid fa-xmark"></i> Remove</button>
+                        </div>
+                        <label class="field"><span>...or paste an image URL</span><input type="text" id="imageUrl" inputmode="url" placeholder="https://..." autocomplete="off"></label>
+                    </div>
+                </div>
+
+                <label class="field"><span>Product name *</span><input type="text" name="title" required maxlength="120"></label>
+                <div class="form-row">
+                    <label class="field"><span>Category *</span><select name="category" required></select></label>
+                    <label class="field"><span>Stock *</span><input type="number" name="stock" min="0" step="1" required></label>
+                </div>
+                <div class="form-row">
+                    <label class="field"><span>Price ($) *</span><input type="number" name="price" min="0" step="0.01" required></label>
+                    <span></span>
+                </div>
+                <label class="field"><span>Description</span><textarea name="description" rows="2" maxlength="300"></textarea></label>
+
+                <h3 id="specTitle">Technical specifications</h3>
+                <div class="spec-grid" id="specFields"></div>
+            </div>
+
+            <div class="modal-foot">
+                <button type="button" class="btn btn-outline" data-close>Cancel</button>
+                <button type="submit" class="btn btn-ok" id="saveProductBtn"><i class="fa-solid fa-floppy-disk"></i> Save component</button>
+            </div>
+        </form>
+    </dialog>
+
+    <footer id="footer"></footer>
+    <script src="script.js"></script>
+</body>
+</html>

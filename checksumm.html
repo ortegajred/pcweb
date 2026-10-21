@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iWant PC - Checkout Summary</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style1.css">
+</head>
+<body data-page="checkout">
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="brand-logo"><img src="iwantpc1.jpg" alt="iWant PC logo" class="nav-logo"></a>
+            <div class="page-title"><i class="fa-solid fa-lock"></i> Secure Checkout</div>
+        </div>
+    </header>
+    <main class="page" id="checkoutBody">
+        <a href="home.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Store</a>
+        <form id="checkoutForm" class="two-col">
+            <div class="card">
+                <h2><i class="fa-solid fa-credit-card"></i> Payment &amp; Instructions</h2>
+                <p class="hint" id="shipTo"></p>
+                <label class="field"><span>Payment Method</span>
+                    <select name="payment" required>
+                        <option value="cod">Cash on Delivery (COD)</option>
+                        <option value="gcash">GCash / E-Wallet</option>
+                        <option value="card">Credit / Debit Card</option>
+                    </select>
+                </label>
+                <label class="field"><span>Message for Seller (Optional)</span>
+                    <textarea name="note" rows="4" placeholder="e.g. Please test the items before shipping or call upon arrival..."></textarea>
+                </label>
+                <p class="hint">Orders paid by GCash or card stay in Pending Payment until you pay from My Orders.</p>
+            </div>
+            <div class="card">
+                <h2><i class="fa-solid fa-receipt"></i> Order Summary</h2>
+                <div id="summaryRows"></div>
+                <div class="summary-row total-row"><span>Total Amount</span><span id="sumTotal"></span></div>
+                <button type="submit" class="btn btn-ok btn-block" style="margin-top:20px"><i class="fa-solid fa-check"></i> Place Order Now</button>
+            </div>
+        </form>
+    </main>
+    <footer id="footer"></footer>
+    <script src="script.js"></script>
+</body>
+</html>

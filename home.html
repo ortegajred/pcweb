@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iWant PC - Modern Hardware & Tech</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style1.css">
+</head>
+<body data-page="home">
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="brand-logo"><img src="iwantpc1.jpg" alt="iWant PC logo" class="nav-logo"></a>
+
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="searchInput" placeholder="Search components, laptops, gear..." aria-label="Search products">
+            </div>
+
+            <nav class="nav-links">
+                <a href="#products" class="nav-link active"><i class="fa-solid fa-store"></i> Products</a>
+                <a href="buildpc.html" class="nav-link"><i class="fa-solid fa-screwdriver-wrench"></i> Build Your Own PC</a>
+                <a href="#services-booking" class="nav-link"><i class="fa-solid fa-shield-halved"></i> Services &amp; Booking</a>
+
+                <button class="cart-btn" id="openCartBtn" aria-label="View cart">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="cart-count" id="cartCount">0</span>
+                </button>
+
+                <div class="user-menu-wrapper">
+                    <button class="user-btn" id="userMenuBtn" aria-haspopup="true">
+                        <i class="fa-solid fa-circle-user"></i><span>Account</span><i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-menu" id="userDropdown">
+                        <div class="dropdown-header">
+                            <p class="user-name" id="userName"></p>
+                            <p class="user-email" id="userEmail"></p>
+                        </div>
+                        <hr class="dropdown-divider">
+                        <a href="myorders.html"><i class="fa-solid fa-box-archive"></i> My Orders</a>
+                        <a href="accountsetting.html"><i class="fa-solid fa-sliders"></i> Settings</a>
+                        <hr class="dropdown-divider">
+                        <a href="login.html" class="logout-link" data-logout><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <section class="hero-banner">
+            <div class="hero-text">
+                <span class="badge">New Season Drop</span>
+                <h1>Upgrade Your Digital Workspace</h1>
+                <p>Discover high-performance components, sleek peripherals, and cutting-edge tech built for power users.</p>
+                <a href="#products" class="btn btn-primary">Shop Collection <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+        </section>
+
+        <section class="catalog-section" id="products">
+            <div class="section-head">
+                <h2>Explore Products</h2>
+                <div class="category-pills" id="categoryPills">
+                    <button class="pill active" data-category="all"><i class="fa-solid fa-border-all"></i> All Items</button>
+                    <button class="pill" data-category="processors"><i class="fa-solid fa-microchip"></i> Processors</button>
+                    <button class="pill" data-category="motherboards"><i class="fa-solid fa-server"></i> Motherboards</button>
+                    <button class="pill" data-category="memory"><i class="fa-solid fa-memory"></i> Memory</button>
+                    <button class="pill" data-category="graphics-cards"><i class="fa-solid fa-desktop"></i> Graphics cards</button>
+                    <button class="pill" data-category="power-supplies"><i class="fa-solid fa-plug"></i> Power supplies</button>
+                </div>
+            </div>
+            <div class="product-grid" id="productGrid"></div>
+        </section>
+
+        <section class="catalog-section" id="pc-builder">
+            <div class="card">
+                <h2><i class="fa-solid fa-screwdriver-wrench"></i> Build Your Own PC</h2>
+                <p>Choose a processor, motherboard, memory, graphics card and power supply. The builder checks sockets, memory type and power needs as you pick, and our technicians can assemble and stress-test the finished build.</p>
+                <div class="btn-row">
+                    <a href="buildpc.html" class="btn btn-primary"><i class="fa-solid fa-screwdriver-wrench"></i> Open the PC builder</a>
+                    <a href="#services-booking" class="btn btn-soft" data-prefill="PC Build Consultation">Book a build consultation</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="catalog-section" id="services-booking">
+            <div class="card">
+                <h2><i class="fa-solid fa-shield-halved"></i> Services &amp; Booking</h2>
+                <form id="bookingForm">
+                    <div class="form-row">
+                        <label class="field"><span>Service type</span>
+                            <select id="bookingType" required>
+                                <option>Warranty Claim</option>
+                                <option>Repair / Diagnostics</option>
+                                <option>PC Build Consultation</option>
+                            </select>
+                        </label>
+                        <label class="field"><span>Device / part</span><input type="text" id="bookingDevice" placeholder="e.g. AMD Ryzen 5 processor" required></label>
+                    </div>
+                    <label class="field"><span>Describe the issue or request</span><textarea id="bookingDetails" rows="3" required></textarea></label>
+                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-calendar-check"></i> Submit booking</button>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <div class="cart-overlay" id="cartOverlay"></div>
+    <aside class="cart-drawer" id="cartDrawer" aria-label="Shopping cart">
+        <div class="cart-header">
+            <h3>Your Shopping Cart</h3>
+            <button class="close-cart-btn" id="closeCartBtn" aria-label="Close cart">&times;</button>
+        </div>
+        <div class="cart-items" id="cartItems"></div>
+        <div class="cart-footer">
+            <div class="summary-row"><span>Subtotal</span><span id="cartSubtotal">$0.00</span></div>
+            <div class="summary-row"><span>Estimated Tax (8%)</span><span id="cartTax">$0.00</span></div>
+            <div class="summary-row total-row"><span>Total</span><span id="cartTotal">$0.00</span></div>
+            <button class="btn btn-primary btn-block" id="checkoutBtn">Proceed to Checkout</button>
+            <p class="cart-note">Shipping is added at checkout.</p>
+        </div>
+    </aside>
+
+    <footer id="footer"></footer>
+    <script src="script.js"></script>
+</body>
+</html>
