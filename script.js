@@ -308,7 +308,7 @@ async function currentUser() {
     if (!s || !s.email) return null;
     try {
         const rows = await sb(`users?email=eq.${encodeURIComponent(s.email)}&select=*`);
-        return (rows && rows.length && rows[0].active) ? rows[0] : null;
+        return (rows && rows.length && rows[0].is_active) ? rows[0] : null;
     } catch {
         return null;
     }
