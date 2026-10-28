@@ -1,6 +1,6 @@
 'use strict';
 /* iWant PC - one script shared by every page. Each page sets <body data-page="..."> and gets its own init below.
-   PRODUCTS live in Supabase (table: products). Users, cart, orders and bookings still live in localStorage. */
+   PRODUCTS and USERS live in Supabase (tables: products, users). Cart, orders and bookings still live in localStorage. */
 
 /* ===== Supabase connection ===== */
 const SUPABASE_URL = 'https://gvrtyixxtmsaryrphxhu.supabase.co';
@@ -22,8 +22,8 @@ async function sb(path, { method = 'GET', body, prefer } = {}) {
     try { data = text ? JSON.parse(text) : null; } catch { data = null; }
     if (!res.ok) {
         let msg = (data && (data.message || data.error)) || res.statusText || 'Request failed';
-        if (/duplicate key/i.test(msg)) msg = 'A product with this name already exists.';
-        if (/relation .* does not exist|schema cache/i.test(msg)) msg = 'The products table was not found. Run supabase_setup.sql in the Supabase SQL Editor first.';
+        if (/duplicate key/i.test(msg)) msg = 'A record with this value already exists.';
+        if (/relation .* does not exist|schema cache/i.test(msg)) msg = 'A required database table was not found. Check your Supabase schema setup.';
         throw new Error(msg);
     }
     return data;
@@ -43,14 +43,14 @@ async function uploadProductImage(blob, name) {
     if (!res.ok) {
         let msg = res.statusText;
         try { const j = await res.json(); msg = j.message || j.error || msg; } catch { /* ignore */ }
-        throw new Error('Image upload failed: ' + msg + '. Check the storage policies in supabase_setup.sql, or paste an image URL instead.');
+        throw new Error('Image upload failed: ' + msg + '. Check the storage policies in Supabase, or paste an image URL instead.');
     }
     return `${SUPABASE_URL}/storage/v1/object/public/${IMAGE_BUCKET}/${path}`;
 }
 
 /* ===== Constants & helpers ===== */
 const KEY = {
-    users: 'iwp_users', session: 'iwp_session', cart: 'iwp_cart', orders: 'iwp_orders', bookings: 'iwp_bookings',
+    session: 'iwp_session', cart: 'iwp_cart', orders: 'iwp_orders', bookings: 'iwp_bookings',
     reports: 'iwp_reports', build: 'iwp_build', buildNote: 'iwp_build_note', prefill: 'iwp_booking_prefill'
 };
 const TAX_RATE = 0.08;
@@ -71,8 +71,7 @@ const ORDER_STATUS = {
     completed: { label: 'Delivered',       icon: 'fa-check' }
 };
 
-/* Technical specs per category. The staff form and the PC builder both read this one definition.
-   type: number | select | combo (text with suggestions). unit is appended on product chips. */
+/* Technical specs per category */
 const SPEC_FIELDS = {
     processors: [
         { key: 'socket', label: 'Socket', type: 'combo', options: ['AM4', 'AM5', 'LGA1200', 'LGA1700', 'LGA1851'], required: true },
@@ -115,7 +114,7 @@ const SPEC_FIELDS = {
 const $ = (sel, root = document) => root.querySelector(sel); const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
-const money = n => '₱' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const money = n => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = prefix => prefix + Date.now().toString().slice(-6);
 const sameId = (a, b) => String(a) === String(b);
@@ -127,7 +126,7 @@ function totals(items) {
     return { subtotal, tax, shipping, total: subtotal + tax + shipping };
 }
 
-/* Product image placeholder (shown until staff add a real image) */
+/* Product image placeholder */
 function placeholder() {
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#1e293b"/>' +
         '<g fill="none" stroke="#475569" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"><rect x="150" y="90" width="100" height="70" rx="8"/><path d="M175 190h50M200 160v30"/></g>' +
@@ -146,7 +145,7 @@ function toast(message, type = 'ok') {
     setTimeout(() => { el.classList.add('hide'); setTimeout(() => el.remove(), 300); }, type === 'error' ? 4500 : 2500);
 }
 
-/* Resize a picked image to a JPEG blob (max side 900px) before uploading */
+/* Resize a picked image to a JPEG blob */
 function resizeToBlob(file, max = 900) {
     return new Promise((resolve, reject) => {
         const img = new Image(), url = URL.createObjectURL(file);
@@ -206,7 +205,6 @@ const Products = {
         if (!rows || !rows.length) throw new Error('The product was not deleted. Your database policies may block deletes.');
         this.list = this.list.filter(p => !sameId(p.id, id));
     },
-    /* direction -1 = take stock (checkout), +1 = give it back (cancel). Atomic on the server. */
     async adjustStock(lines, direction) {
         const items = lines.filter(i => !i.service && i.id !== null && i.id !== undefined).map(i => ({ id: i.id, qty: i.qty }));
         if (items.length) await sb('rpc/adjust_stock_bulk', { method: 'POST', body: { items, direction } });
@@ -220,12 +218,11 @@ function specChips(p, max = 4) {
         .map(t => `<span class="chip">${esc(t)}</span>`).join('');
 }
 
-/* ===== PC-builder compatibility rules (pure functions) ===== */
+/* ===== PC-builder compatibility rules ===== */
 const specOf = p => (p && p.specs) || {};
 const memTypes = cpu => String(specOf(cpu).memory_type || '').split('/').map(s => s.trim()).filter(Boolean);
-const OVERHEAD_W = 50;    /* fans, drives, USB, RGB, etc. */
+const OVERHEAD_W = 50;
 
-/* sel = { processors, motherboards, memory, 'graphics-cards', 'power-supplies' } holding product objects */
 function pairChecks(sel) {
     const cpu = sel.processors, mb = sel.motherboards, ram = sel.memory, out = [];
     if (cpu && mb && specOf(cpu).socket && specOf(mb).socket) {
@@ -249,7 +246,6 @@ function pairChecks(sel) {
     return out;
 }
 
-/* Why would product p (in category cat) clash with what is already picked? null = fine */
 function incompatibility(cat, p, sel) {
     const hypo = { ...sel, [cat]: p };
     const bad = pairChecks(hypo).find(c => c.level === 'error' && c.who.includes(cat));
@@ -284,14 +280,8 @@ function buildChecks(sel) {
     return out;
 }
 
-/* ===== Seed data (first run only: users, orders, bookings) ===== */
+/* ===== Seed data (first run only: orders, bookings) ===== */
 const person = o => ({ phone: '', address: '', city: '', zip: '', active: true, ...o });
-
-const SEED_USERS = [
-    person({ id: 'USR-001', name: 'Edgardo Ortega', username: 'edgardo', email: 'edgardo@example.com', password: 'admin123', role: 'admin' }),
-    person({ id: 'USR-002', name: 'Staff Mark', username: 'staffmark', email: 'mark.staff@iwantpc.com', password: 'staff123', role: 'staff' }),
-    person({ id: 'USR-003', name: 'Alex Johnson', username: 'alexjohnson', email: 'alex.j@example.com', password: 'user123', role: 'customer', phone: '+63 912 345 6789', address: '123 Tech Street, Barangay San Isidro', city: 'Valenzuela City', zip: '1440' })
-];
 
 function seedOrder(id, status, lines, receiveDate) {
     const items = lines.map(([title, price, qty]) => ({ id: null, title, price, qty }));
@@ -307,23 +297,35 @@ const SEED_BOOKINGS = [
     { id: 'SRV-5012', customer: 'Michael Tan', email: '', device: 'AMD Ryzen 5 Processor', type: 'Warranty Claim (Bent Pins)', details: '', status: 'Under Review' }
 ];
 
-[[KEY.users, SEED_USERS], [KEY.orders, SEED_ORDERS], [KEY.bookings, SEED_BOOKINGS], [KEY.reports, 0]]
+[[KEY.orders, SEED_ORDERS], [KEY.bookings, SEED_BOOKINGS], [KEY.reports, 0]]
     .forEach(([key, value]) => { if (localStorage.getItem(key) === null) write(key, value); });
-localStorage.removeItem('iwp_products');   /* products moved to Supabase */
 
-/* ===== Session & access control ===== */
+/* ===== Session & Supabase Authentication ===== */
 const homeFor = role => ({ admin: 'admin.html', staff: 'staff.html' }[role] || 'home.html');
-function currentUser() {
+
+async function currentUser() {
     const s = read(KEY.session, null);
-    return (s && read(KEY.users, []).find(u => u.email === s.email && u.active)) || null;
+    if (!s || !s.email) return null;
+    try {
+        const rows = await sb(`users?email=eq.${encodeURIComponent(s.email)}&select=*`);
+        return (rows && rows.length && rows[0].active) ? rows[0] : null;
+    } catch {
+        return null;
+    }
 }
-function guard(roles) {
-    const user = currentUser();
-    if (!user || (roles && !roles.includes(user.role))) { location.replace(user ? homeFor(user.role) : 'login.html'); return null; }
+
+async function guard(roles) {
+    const user = await currentUser();
+    if (!user || (roles && !roles.includes(user.role))) { 
+        location.replace(user ? homeFor(user.role) : 'login.html'); 
+        return null; 
+    }
     return user;
 }
+
 function formMessage(text, ok = false) {
     const el = $('#formMsg');
+    if (!el) return;
     el.textContent = text;
     el.classList.toggle('ok', ok);
 }
@@ -340,7 +342,7 @@ function addToCart(id, qty = 1) {
     return product;
 }
 
-/* Navbar + cart drawer + account menu: shared by the home page and the PC builder */
+/* Navbar + cart drawer + account menu */
 function initShell(user) {
     const drawer = $('#cartDrawer'), overlay = $('#cartOverlay'), dropdown = $('#userDropdown');
     $('#userName').textContent = user.name;
@@ -415,7 +417,6 @@ function setupInventory(tbody, { canDelete = false, addButton = null } = {}) {
     let editing = null, pendingBlob = null, objectUrl = null;
     const COLS = 7;
 
-    /* --- table --- */
     const rowHtml = p => `
         <tr data-id="${esc(p.id)}">
             <td><img class="thumb" src="${productImg(p)}" alt="${esc(p.title)}" loading="lazy"></td>
@@ -444,7 +445,6 @@ function setupInventory(tbody, { canDelete = false, addButton = null } = {}) {
         changed();
     };
 
-    /* --- dynamic spec fields --- */
     const specInput = (cat, f, value) => {
         const id = 'spec-' + f.key, req = f.required ? ' required' : '', val = value ?? '';
         let control;
@@ -472,7 +472,6 @@ function setupInventory(tbody, { canDelete = false, addButton = null } = {}) {
         return out;
     };
 
-    /* --- image field --- */
     const setPreview = src => { preview.src = src || placeholder(); };
     preview.addEventListener('error', () => { preview.src = placeholder(); });
     imageFile.addEventListener('change', async () => {
@@ -487,10 +486,9 @@ function setupInventory(tbody, { canDelete = false, addButton = null } = {}) {
         } catch (err) { pendingBlob = null; imageFile.value = ''; toast(esc(err.message), 'error'); }
     });
     imageUrl.addEventListener('input', () => { pendingBlob = null; imageFile.value = ''; });
-    imageUrl.addEventListener('change', () => setPreview(imageUrl.value.trim()));   /* preview once, not per keystroke */
+    imageUrl.addEventListener('change', () => setPreview(imageUrl.value.trim()));
     $('#imageClear').addEventListener('click', () => { pendingBlob = null; imageFile.value = ''; imageUrl.value = ''; setPreview(''); });
 
-    /* --- modal --- */
     const openModal = p => {
         editing = p || null; pendingBlob = null;
         form.reset(); imageFile.value = '';
@@ -534,7 +532,6 @@ function setupInventory(tbody, { canDelete = false, addButton = null } = {}) {
         finally { saveBtn.disabled = false; saveBtn.innerHTML = label; }
     });
 
-    /* --- table events --- */
     tbody.addEventListener('click', async e => {
         if (e.target.closest('[data-retry]')) return load();
         const row = e.target.closest('tr[data-id]');
@@ -573,38 +570,56 @@ const revenue = () => paidOrders().reduce((sum, o) => sum + o.total, 0);
 /* ===== Page initializers ===== */
 const pages = {};
 
-pages.login = () => {
-    const existing = currentUser();
+pages.login = async () => {
+    const existing = await currentUser();
     if (existing) { location.replace(homeFor(existing.role)); return; }
-    $('#loginForm').addEventListener('submit', e => {
+    $('#loginForm').addEventListener('submit', async e => {
         e.preventDefault();
         const email = $('#email').value.trim().toLowerCase(), password = $('#password').value;
-        const user = read(KEY.users, []).find(u => u.email.toLowerCase() === email && u.password === password);
-        if (!user) return formMessage('Incorrect email or password.');
-        if (!user.active) return formMessage('This account is suspended. Contact an administrator.');
-        write(KEY.session, { email: user.email });
-        location.href = homeFor(user.role);
+        try {
+            const rows = await sb(`users?email=eq.${encodeURIComponent(email)}&password=eq.${encodeURIComponent(password)}&select=*`);
+            if (!rows || rows.length === 0) return formMessage('Incorrect email or password.');
+            const user = rows[0];
+            if (!user.active) return formMessage('This account is suspended. Contact an administrator.');
+            write(KEY.session, { email: user.email });
+            location.href = homeFor(user.role);
+        } catch (err) {
+            formMessage(err.message || 'Login failed.');
+        }
     });
 };
 
 pages.signup = () => {
-    $('#signupForm').addEventListener('submit', e => {
+    $('#signupForm').addEventListener('submit', async e => {
         e.preventDefault();
-        const users = read(KEY.users, []);
         const email = $('#email').value.trim().toLowerCase(), password = $('#password').value;
         if (password.length < 6) return formMessage('Password must be at least 6 characters.');
         if (password !== $('#confirm-password').value) return formMessage('Passwords do not match.');
-        if (users.some(u => u.email.toLowerCase() === email)) return formMessage('An account with this email already exists.');
-        const name = $('#fullname').value.trim();
-        users.push(person({ id: 'USR-' + String(users.length + 1).padStart(3, '0'), name, username: email.split('@')[0], email, password, role: 'customer' }));
-        write(KEY.users, users);
-        formMessage('Account created. Redirecting to sign in...', true);
-        setTimeout(() => { location.href = 'login.html'; }, 1000);
+        
+        try {
+            const existing = await sb(`users?email=eq.${encodeURIComponent(email)}&select=email`);
+            if (existing && existing.length > 0) return formMessage('An account with this email already exists.');
+            
+            const name = $('#fullname').value.trim();
+            const newUserId = 'USR-' + Date.now().toString().slice(-6);
+            const newUser = person({ id: newUserId, name, username: email.split('@')[0], email, password, role: 'customer' });
+            
+            await sb('users', {
+                method: 'POST',
+                body: newUser,
+                prefer: 'return=representation'
+            });
+            
+            formMessage('Account created. Redirecting to sign in...', true);
+            setTimeout(() => { location.href = 'login.html'; }, 1000);
+        } catch (err) {
+            formMessage(err.message || 'Signup failed.');
+        }
     });
 };
 
 pages.home = async () => {
-    const user = guard();
+    const user = await guard();
     if (!user) return;
     let category = 'all';
     const grid = $('#productGrid'), search = $('#searchInput');
@@ -662,7 +677,6 @@ pages.home = async () => {
         renderProducts();
     });
 
-    /* arriving from the builder's search box or its "Book Consultation" button */
     const q0 = new URLSearchParams(location.search).get('q');
     if (q0) search.value = q0;
     $$('[data-prefill]').forEach(btn => btn.addEventListener('click', () => { $('#bookingType').value = btn.dataset.prefill; }));
@@ -684,7 +698,7 @@ pages.home = async () => {
 };
 
 pages['pc-builder'] = async () => {
-    const user = guard();
+    const user = await guard();
     if (!user) return;
     const shell = initShell(user);
     $('#searchInput').addEventListener('keydown', e => {
@@ -699,7 +713,7 @@ pages['pc-builder'] = async () => {
         { cat: 'power-supplies', label: 'Power Supply (PSU)', icon: 'fa-plug', prompt: 'Select a power supply' }
     ];
     const groups = $('#builderGroups');
-    let ids = read(KEY.build, {});          /* category -> product id */
+    let ids = read(KEY.build, {});
 
     const load = async () => {
         groups.innerHTML = '<div class="empty-state"><i class="fa-solid fa-spinner fa-spin"></i><p>Loading components...</p></div>';
@@ -742,7 +756,6 @@ pages['pc-builder'] = async () => {
                 : '<span class="hint" style="margin:0">Nothing selected yet.</span>';
         });
 
-        /* summary */
         const chosen = PARTS.filter(({ cat }) => sel[cat]).map(({ cat }) => ({ cat, p: sel[cat] }));
         const assembly = $('#assemblyToggle').checked;
         const subtotal = chosen.reduce((n, c) => n + c.p.price, 0);
@@ -754,7 +767,6 @@ pages['pc-builder'] = async () => {
         $('#buildTotal').textContent = money(subtotal + (assembly && chosen.length ? ASSEMBLY_FEE : 0));
         $('#assemblyRow').querySelector('span:last-child').textContent = money(ASSEMBLY_FEE);
 
-        /* power meter */
         const est = powerEstimate(sel), rec = recommendedPsu(sel), psuW = Number(specOf(sel['power-supplies']).wattage) || 0;
         $('#totalWatts').textContent = est ? `${est} W` : '0 W';
         $('#recWatts').textContent = rec ? `${rec} W+` : '--';
@@ -764,7 +776,6 @@ pages['pc-builder'] = async () => {
         fill.className = 'meter-fill' + (psuW && est > psuW ? ' bad' : (psuW && psuW < rec ? ' warn' : ''));
         $('#meterLabel').textContent = psuW && est ? `${pct}% of the ${psuW}W power supply` : 'Pick a power supply to see headroom';
 
-        /* compatibility */
         const checks = buildChecks(sel);
         const icon = { ok: 'fa-circle-check', warn: 'fa-triangle-exclamation', error: 'fa-circle-xmark', info: 'fa-circle-info' };
         $('#compatList').innerHTML = checks.length
@@ -823,7 +834,7 @@ pages['pc-builder'] = async () => {
 };
 
 pages.checkout = async () => {
-    const user = guard();
+    const user = await guard();
     if (!user) return;
     const body = $('#checkoutBody');
     const empty = () => { body.innerHTML = '<div class="card empty-state"><i class="fa-solid fa-cart-shopping"></i><p>Your cart is empty.</p><a href="home.html" class="btn btn-primary">Browse products</a></div>'; };
@@ -833,7 +844,6 @@ pages.checkout = async () => {
     try { await Products.load(); }
     catch (err) { body.innerHTML = errorCard(err.message); body.addEventListener('click', e => { if (e.target.closest('[data-retry]')) location.reload(); }); return; }
 
-    /* re-price against the live catalog and drop anything that is gone or sold out */
     const dropped = [];
     cart = cart.filter(i => {
         if (i.service) return true;
@@ -862,7 +872,7 @@ pages.checkout = async () => {
         const btn = $('button[type="submit"]', e.target), label = btn.innerHTML;
         btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Placing order...';
         try {
-            await Products.adjustStock(cart, -1);      /* atomic: fails with a clear message if anything is short */
+            await Products.adjustStock(cart, -1);
             const form = new FormData(e.target), payment = form.get('payment');
             const orders = read(KEY.orders, []);
             orders.unshift({
@@ -884,7 +894,7 @@ pages.checkout = async () => {
 };
 
 pages.orders = async () => {
-    const user = guard();
+    const user = await guard();
     if (!user) return;
     const list = $('#ordersList');
     let tab = 'all';
@@ -935,7 +945,6 @@ pages.orders = async () => {
             case 'cancel':
                 if (!confirm('Cancel this order?')) break;
                 try {
-                    /* put stock back; match by title because seeded orders carry no product id */
                     await Products.load();
                     const back = order.items.map(i => ({ ...i, id: Products.byTitle(i.title)?.id ?? null }));
                     await Products.adjustStock(back, +1);
@@ -959,37 +968,63 @@ pages.orders = async () => {
         }
     });
     render();
-    try { await Products.load(); render(); } catch { /* images fall back to the placeholder */ }
+    try { await Products.load(); render(); } catch { /* ignore */ }
 };
 
-pages.settings = () => {
-    const user = guard();
+pages.settings = async () => {
+    const user = await guard();
     if (!user) return;
-    const users = read(KEY.users, []);
+
     const fill = form => $$('[name]', form).forEach(input => { if (input.name in user && input.type !== 'password') input.value = user[input.name]; });
-    const persist = (changes, message) => { Object.assign(user, changes); write(KEY.users, users.map(u => u.id === user.id ? user : u)); write(KEY.session, { email: user.email }); toast(message); };
-    const data = form => Object.fromEntries(new FormData(form));
     $$('#profileForm, #addressForm').forEach(fill);
-    $('#profileForm').addEventListener('submit', e => {
+
+    const persist = async (changes, message) => {
+        try {
+            await sb(`users?id=eq.${encodeURIComponent(user.id)}`, {
+                method: 'PATCH',
+                body: changes,
+                prefer: 'return=representation'
+            });
+            Object.assign(user, changes);
+            write(KEY.session, { email: user.email });
+            toast(message);
+        } catch (err) {
+            toast(esc(err.message || 'Failed to update settings.'), 'error');
+        }
+    };
+
+    const data = form => Object.fromEntries(new FormData(form));
+
+    $('#profileForm').addEventListener('submit', async e => {
         e.preventDefault();
         const d = data(e.target);
-        if (users.some(u => u.id !== user.id && u.email.toLowerCase() === d.email.toLowerCase())) return toast('That email is already used by another account.', 'error');
-        persist(d, 'Profile settings updated successfully!');
+        try {
+            const checkEmail = await sb(`users?id=neq.${encodeURIComponent(user.id)}&email=eq.${encodeURIComponent(d.email)}&select=email`);
+            if (checkEmail && checkEmail.length > 0) return toast('That email is already used by another account.', 'error');
+            await persist(d, 'Profile settings updated successfully!');
+        } catch (err) {
+            toast(esc(err.message), 'error');
+        }
     });
-    $('#addressForm').addEventListener('submit', e => { e.preventDefault(); persist(data(e.target), 'Shipping address updated successfully!'); });
-    $('#passwordForm').addEventListener('submit', e => {
+
+    $('#addressForm').addEventListener('submit', async e => {
+        e.preventDefault();
+        await persist(data(e.target), 'Shipping address updated successfully!');
+    });
+
+    $('#passwordForm').addEventListener('submit', async e => {
         e.preventDefault();
         const d = data(e.target);
         if (d.current !== user.password) return toast('Current password is incorrect.', 'error');
         if (d.next.length < 6) return toast('New password must be at least 6 characters.', 'error');
         if (d.next !== d.confirm) return toast('New passwords do not match.', 'error');
-        persist({ password: d.next }, 'Password changed successfully!');
+        await persist({ password: d.next }, 'Password changed successfully!');
         e.target.reset();
     });
 };
 
-pages.staff = () => {
-    if (!guard(['staff', 'admin'])) return;
+pages.staff = async () => {
+    if (!(await guard(['staff', 'admin']))) return;
     const tbody = $('#queueBody'), proofInput = $('#proofInput');
     let pendingId = null;
     const saveOrders = orders => { write(KEY.orders, orders); renderQueue(); };
@@ -1057,19 +1092,29 @@ pages.staff = () => {
     renderQueue();
 };
 
-pages.admin = () => {
-    const admin = guard(['admin']);
+pages.admin = async () => {
+    const admin = await guard(['admin']);
     if (!admin) return;
     const usersBody = $('#usersBody'), servicesBody = $('#servicesBody');
+
+    let allUsers = [];
+    async function loadUsers() {
+        try {
+            allUsers = await sb('users?select=*&order=id.asc');
+        } catch (err) {
+            allUsers = [];
+        }
+    }
 
     const renderMetrics = () => {
         $('#mRevenue').textContent = money(revenue());
         $('#mOrders').textContent = read(KEY.orders, []).length;
-        $('#mAccounts').textContent = read(KEY.users, []).length;
+        $('#mAccounts').textContent = allUsers.length;
         $('#mServices').textContent = read(KEY.bookings, []).filter(b => b.status === 'Under Review').length;
     };
+
     const renderUsers = () => {
-        usersBody.innerHTML = read(KEY.users, []).map(u => `
+        usersBody.innerHTML = allUsers.map(u => `
             <tr data-id="${esc(u.id)}" class="${u.active ? '' : 'is-suspended'}">
                 <td>#${esc(u.id)}</td><td>${esc(u.name)}</td><td>${esc(u.email)}</td>
                 <td>
@@ -1082,6 +1127,7 @@ pages.admin = () => {
             </tr>`).join('');
         renderMetrics();
     };
+
     const renderServices = () => {
         const statusClass = { 'Under Review': 'pending', Approved: 'approved', Rejected: 'rejected' };
         servicesBody.innerHTML = read(KEY.bookings, []).map(b => `
@@ -1092,21 +1138,38 @@ pages.admin = () => {
             </tr>`).join('') || '<tr><td colspan="6" class="table-empty">No service tickets yet.</td></tr>';
         renderMetrics();
     };
-    const updateUser = (id, change) => {
-        const users = read(KEY.users, []);
-        change(users.find(u => u.id === id));
-        write(KEY.users, users);
-        renderUsers();
+
+    const updateUserInDb = async (id, changes) => {
+        try {
+            await sb(`users?id=eq.${encodeURIComponent(id)}`, {
+                method: 'PATCH',
+                body: changes,
+                prefer: 'return=representation'
+            });
+            await loadUsers();
+            renderUsers();
+            toast('User updated successfully.');
+        } catch (err) {
+            toast(esc(err.message || 'Failed to update user.'), 'error');
+        }
     };
 
-    usersBody.addEventListener('change', e => {
-        if (e.target.matches('[data-role]')) { updateUser(e.target.closest('tr').dataset.id, u => { u.role = e.target.value; }); toast('Role updated.'); }
+    usersBody.addEventListener('change', async e => {
+        if (e.target.matches('[data-role]')) {
+            const id = e.target.closest('tr').dataset.id;
+            await updateUserInDb(id, { role: e.target.value });
+        }
     });
-    usersBody.addEventListener('click', e => {
+
+    usersBody.addEventListener('click', async e => {
         if (!e.target.closest('[data-toggle]')) return;
-        updateUser(e.target.closest('tr').dataset.id, u => { u.active = !u.active; });
-        toast('Account status updated.');
+        const row = e.target.closest('tr');
+        const user = allUsers.find(u => u.id === row.dataset.id);
+        if (user) {
+            await updateUserInDb(user.id, { active: !user.active });
+        }
     });
+
     servicesBody.addEventListener('click', e => {
         const btn = e.target.closest('[data-decide]');
         if (!btn) return;
@@ -1115,18 +1178,40 @@ pages.admin = () => {
         write(KEY.bookings, bookings);
         renderServices(); toast(`Claim ${btn.dataset.decide.toLowerCase()}.`);
     });
-    $('#addUserBtn').addEventListener('click', () => {
+
+    $('#addUserBtn').addEventListener('click', async () => {
         const name = (prompt('Full name of the new user:') || '').trim();
         const email = (prompt('Email address:') || '').trim().toLowerCase();
         if (!name || !email) return;
-        const users = read(KEY.users, []);     /* was an undeclared variable (crashed in strict mode) */
-        if (users.some(u => u.email.toLowerCase() === email)) return toast('That email already has an account.', 'error');
-        users.push(person({ id: 'USR-' + String(users.length + 1).padStart(3, '0'), name, username: email.split('@')[0], email, password: 'changeme123', role: 'customer' }));
-        write(KEY.users, users);
-        renderUsers(); toast('User added with the temporary password "changeme123".');
+        try {
+            const existing = await sb(`users?email=eq.${encodeURIComponent(email)}&select=email`);
+            if (existing && existing.length > 0) return toast('That email already has an account.', 'error');
+            
+            const newUser = person({
+                id: 'USR-' + String(allUsers.length + 1).padStart(3, '0'),
+                name,
+                username: email.split('@')[0],
+                email,
+                password: 'changeme123',
+                role: 'customer'
+            });
+
+            await sb('users', {
+                method: 'POST',
+                body: newUser,
+                prefer: 'return=representation'
+            });
+
+            await loadUsers();
+            renderUsers();
+            toast('User added with the temporary password "changeme123".');
+        } catch (err) {
+            toast(esc(err.message || 'Failed to add user.'), 'error');
+        }
     });
 
     setupInventory($('#inventoryBody'), { canDelete: true, addButton: $('#addProductBtn') });
+    await loadUsers();
     renderUsers();
     renderServices();
 };
