@@ -104,6 +104,22 @@
         </section>
     </main>
 
+    <!-- Reviews Modal -->
+    <dialog class="modal" id="reviewsModal" aria-labelledby="reviewsModalTitle">
+        <form class="modal-form" method="dialog">
+            <div class="modal-head">
+                <h2 id="reviewsModalTitle"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> Product Reviews &amp; Feedback</h2>
+                <button type="button" class="close-cart-btn" data-close aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body" id="reviewsModalBody">
+                <p class="hint">Loading reviews...</p>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-outline" data-close>Close</button>
+            </div>
+        </form>
+    </dialog>
+
     <div class="cart-overlay" id="cartOverlay"></div>
     <aside class="cart-drawer" id="cartDrawer" aria-label="Shopping cart">
         <div class="cart-header">
@@ -112,9 +128,9 @@
         </div>
         <div class="cart-items" id="cartItems"></div>
         <div class="cart-footer">
-            <div class="summary-row"><span>Subtotal</span><span id="cartSubtotal">PHP 0.00</span></div>
-            <div class="summary-row"><span>Estimated Tax (8%)</span><span id="cartTax">PHP 0.00</span></div>
-            <div class="summary-row total-row"><span>Total</span><span id="cartTotal">PHP 0.00</span></div>
+            <div class="summary-row"><span>Subtotal</span><span id="cartSubtotal">$0.00</span></div>
+            <div class="summary-row"><span>Estimated Tax (8%)</span><span id="cartTax">$0.00</span></div>
+            <div class="summary-row total-row"><span>Total</span><span id="cartTotal">$0.00</span></div>
             <button class="btn btn-primary btn-block" id="checkoutBtn">Proceed to Checkout</button>
             <p class="cart-note">Shipping is added at checkout.</p>
         </div>
