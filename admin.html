@@ -16,7 +16,7 @@
     </header>
     <main class="page page-lg">
         <div class="metrics">
-            <div class="metric-card"><h3>Total Revenue</h3><div class="metric-value" id="mRevenue">PHP 0.00</div></div>
+            <div class="metric-card"><h3>Total Revenue</h3><div class="metric-value" id="mRevenue">$0.00</div></div>
             <div class="metric-card"><h3>System Orders</h3><div class="metric-value" id="mOrders">0</div></div>
             <div class="metric-card"><h3>Registered Accounts</h3><div class="metric-value" id="mAccounts">0</div></div>
             <div class="metric-card"><h3>Active Warranties / Services</h3><div class="metric-value" id="mServices">0</div></div>
@@ -33,12 +33,11 @@
             </div>
             <div class="table-wrap">
                 <table class="data-table">
-                    <thead><tr><th>Image</th><th>Product</th><th>Category</th><th>Specs</th><th>Stock</th><th>Price (PHP)</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Image</th><th>Product</th><th>Category</th><th>Specs</th><th>Stock</th><th>Price ($)</th><th>Actions</th></tr></thead>
                     <tbody id="inventoryBody"></tbody>
                 </table>
             </div>
         </section>
-        
 
         <section class="card">
             <div class="section-head">
@@ -53,27 +52,18 @@
             </div>
         </section>
 
-     <section class="card">
+        <section class="card">
             <div class="section-head"><h2>Oversee Services &amp; Warranty Claims</h2></div>
             <div class="table-wrap">
                 <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Ticket ID</th>
-                            <th>Customer</th>
-                            <th>Device / Part</th>
-                            <th>Issue Type</th>
-                            <th>Issue / Message</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Ticket ID</th><th>Customer</th><th>Device / Part</th><th>Issue Type</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody id="servicesBody"></tbody>
                 </table>
             </div>
         </section>
     </main>
-    <!-- Add / edit component. The spec fields below are generated from the chosen category (see SPEC_FIELDS in script.js). -->
+
+    <!-- Add / edit component modal -->
     <dialog class="modal" id="productModal" aria-labelledby="modalTitle">
         <form class="modal-form" id="productForm">
             <div class="modal-head">
@@ -100,7 +90,7 @@
                     <label class="field"><span>Stock *</span><input type="number" name="stock" min="0" step="1" required></label>
                 </div>
                 <div class="form-row">
-                    <label class="field"><span>Price (PHP ) *</span><input type="number" name="price" min="0" step="0.01" required></label>
+                    <label class="field"><span>Price ($) *</span><input type="number" name="price" min="0" step="0.01" required></label>
                     <span></span>
                 </div>
                 <label class="field"><span>Description</span><textarea name="description" rows="2" maxlength="300"></textarea></label>
@@ -115,23 +105,23 @@
             </div>
         </form>
     </dialog>
-    
-<!-- Message view modal -->
-    <dialog class="modal" id="messageModal" aria-labelledby="messageModalTitle">
-        <form class="modal-form" method="dialog">
+
+    <!-- Customer Issue / Request Details Modal -->
+    <dialog class="modal" id="serviceModal" aria-labelledby="serviceModalTitle">
+        <div class="modal-form" style="padding: 24px;">
             <div class="modal-head">
-                <h2 id="messageModalTitle"><i class="fa-solid fa-message"></i> Customer Issue / Request</h2>
+                <h2 id="serviceModalTitle"><i class="fa-solid fa-circle-info"></i> Customer Issue / Request</h2>
                 <button type="button" class="close-cart-btn" data-close aria-label="Close">&times;</button>
             </div>
-            <div class="modal-body">
-                <p id="modalCustomerMessageText" style="white-space: pre-wrap; background: var(--bg-soft, #1e293b); padding: 16px; border-radius: 8px; color: var(--text, #f8fafc);"></p>
+            <div class="modal-body" style="margin-top: 15px;">
+                <p id="serviceDetailsText" style="white-space: pre-wrap; word-break: break-word; color: #333; line-height: 1.5;"></p>
             </div>
-            <div class="modal-foot">
+            <div class="modal-foot" style="margin-top: 20px; display: flex; justify-content: flex-end;">
                 <button type="button" class="btn btn-outline" data-close>Close</button>
             </div>
-        </form>
+        </div>
     </dialog>
-    
+
     <footer id="footer"></footer>
     <script src="script.js"></script>
 </body>
