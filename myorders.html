@@ -18,13 +18,46 @@
         <a href="home.html" class="back-link"><i class="fa-solid fa-arrow-left"></i> Back to Store</a>
         <div class="order-tabs" id="orderTabs">
             <button class="tab-btn active" data-tab="all">All</button>
-            <button class="tab-btn" data-tab="pending">Pending</button>
+            <button class="tab-btn" data-tab="pending">Pending Payment</button>
             <button class="tab-btn" data-tab="toship">To Ship</button>
             <button class="tab-btn" data-tab="toreceive">To Receive</button>
             <button class="tab-btn" data-tab="completed">Completed</button>
         </div>
         <div class="orders-list" id="ordersList"></div>
     </main>
+
+    <!-- Review Modal for Completed Orders -->
+    <dialog class="modal" id="orderReviewModal" aria-labelledby="orderReviewTitle">
+        <form class="modal-form" id="orderReviewForm">
+            <div class="modal-head">
+                <h2 id="orderReviewTitle"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> Rate &amp; Review Product</h2>
+                <button type="button" class="close-cart-btn" data-close aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body" id="orderReviewBody">
+                <input type="hidden" id="reviewProductId">
+                <p id="reviewProductTitleName" style="font-weight: 600; margin-bottom: 12px;"></p>
+                <label class="field">
+                    <span>Rating (1 to 5 Stars)</span>
+                    <select id="reviewRating" required>
+                        <option value="5">★★★★★ (5/5)</option>
+                        <option value="4">★★★★☆ (4/5)</option>
+                        <option value="3">★★★☆☆ (3/5)</option>
+                        <option value="2">★★☆☆☆ (2/5)</option>
+                        <option value="1">★☆☆☆☆ (1/5)</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span>Feedback Message</span>
+                    <textarea id="reviewFeedback" rows="4" placeholder="Write your feedback about performance, quality, delivery..." required></textarea>
+                </label>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-outline" data-close>Cancel</button>
+                <button type="submit" class="btn btn-primary" id="submitReviewBtn"><i class="fa-solid fa-paper-plane"></i> Submit Review</button>
+            </div>
+        </form>
+    </dialog>
+
     <footer id="footer"></footer>
     <script src="script.js"></script>
 </body>
