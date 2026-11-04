@@ -115,7 +115,23 @@
             </div>
         </form>
     </dialog>
-
+    
+<!-- Message view modal -->
+    <dialog class="modal" id="messageModal" aria-labelledby="messageModalTitle">
+        <form class="modal-form" method="dialog">
+            <div class="modal-head">
+                <h2 id="messageModalTitle"><i class="fa-solid fa-message"></i> Customer Issue / Request</h2>
+                <button type="button" class="close-cart-btn" data-close aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="modalCustomerMessageText" style="white-space: pre-wrap; background: var(--bg-soft, #1e293b); padding: 16px; border-radius: 8px; color: var(--text, #f8fafc);"></p>
+            </div>
+            <div class="modal-foot">
+                <button type="button" class="btn btn-outline" data-close>Close</button>
+            </div>
+        </form>
+    </dialog>
+    
     <footer id="footer"></footer>
     <script src="script.js"></script>
 </body>
