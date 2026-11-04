@@ -366,6 +366,10 @@ dialog.modal::backdrop { background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(
 .compat.error { background: rgba(239, 68, 68, 0.12); color: #fecaca; }
 .compat.error i { color: #f87171; }
 .compat.info i { color: var(--sky); }
+#serviceDetailsText {
+    color: #f1f5f9; /* Gawing matingkad na puti/light gray para mabasa sa dark background */
+    font-size: 1rem;
+}
 
 @media (max-width: 900px) { .builder-layout { grid-template-columns: 1fr; } .summary-card { position: static; } }
 
