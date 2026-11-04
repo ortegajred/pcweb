@@ -1252,18 +1252,16 @@ pages.admin = () => {
         }
         renderMetrics();
     };
-    const renderServices = () => {
-        const statusClass = { 'Under Review': 'pending', Approved: 'approved', Rejected: 'rejected' };
-        if (servicesBody) {
-            servicesBody.innerHTML = read(KEY.bookings, []).map(b => `
-                <tr data-id="${esc(b.id)}">
-                    <td>#${esc(b.id)}</td><td>${esc(b.customer)}</td><td>${esc(b.device)}</td><td>${esc(b.type)}</td>
-                    <td><span class="status ${statusClass[b.status]}">${esc(b.status)}</span></td>
-                    <td class="actions">${b.status === 'Under Review' ? '<button class="btn btn-sm btn-soft" data-decide="Approved">Approve</button><button class="btn btn-sm btn-outline danger" data-decide="Rejected">Reject</button>' : ''}</td>
-                </tr>`).join('') || '<tr><td colspan="6" class="table-empty">No service tickets yet.</td></tr>';
-        }
-        renderMetrics();
-    };
+const renderServices = () => {
+    const statusClass = { 'Under Review': 'pending', Approved: 'approved', Rejected: 'rejected' };
+    servicesBody.innerHTML = read(KEY.bookings, []).map(b => `
+        <tr data-id="${esc(b.id)}">
+            <td>#${esc(b.id)}</td><td>${esc(b.customer)}</td><td>${esc(b.device)}</td><td>${esc(b.type)}</td>
+            <td><span class="status ${statusClass[b.status]}">${esc(b.status)}</span></td>
+            <td class="actions">${b.status === 'Under Review' ? '<button class="btn btn-sm btn-soft" data-decide="Approved">Approve</button><button class="btn btn-sm btn-outline danger" data-decide="Rejected">Reject</button>' : ''}</td>
+        </tr>`).join('') || '<tr><td colspan="6" class="table-empty">No service tickets yet.</td></tr>';
+    renderMetrics();
+};
     const updateUser = (id, change) => {
         const users = read(KEY.users, []);
         change(users.find(u => u.id === id));
