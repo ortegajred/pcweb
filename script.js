@@ -604,8 +604,11 @@ pages.login = () => {
 
             const authUser = data.user;
 
-            let users = read(KEY.users, []);
+            // Retrieve role from Supabase Auth metadata (fallback to 'customer')
+            const supabaseRole = authUser.user_metadata?.role || 'customer';
+            const fullName = authUser.user_metadata?.full_name || 'Customer';
 
+            let users = read(KEY.users, []);
             let user = users.find(
                 u => u.email.toLowerCase() === authUser.email.toLowerCase()
             );
@@ -613,15 +616,18 @@ pages.login = () => {
             if (!user) {
                 user = person({
                     id: authUser.id,
-                    name: authUser.user_metadata?.full_name || 'Customer',
+                    name: fullName,
                     username: authUser.email.split('@')[0],
                     email: authUser.email,
-                    role: 'customer'
+                    role: supabaseRole
                 });
-
                 users.push(user);
-                write(KEY.users, users);
+            } else {
+                // Ensure local role matches Supabase role
+                user.role = supabaseRole;
             }
+
+            write(KEY.users, users);
 
             if (!user.active) {
                 await supabaseClient.auth.signOut();
@@ -639,7 +645,6 @@ pages.login = () => {
         }
     });
 };
-
 pages.signup = () => {
     $('#signupForm').addEventListener('submit', async e => {
         e.preventDefault();
