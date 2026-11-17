@@ -5,11 +5,11 @@
 /* ===== Supabase connection ===== */
 const SUPABASE_URL = 'https://gvrtyixxtmsaryrphxhu.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_uM3M9u329B9AjYI-K2eVrg_rQ90pObS';
+const IMAGE_BUCKET = 'product-images';
 const supabaseClient = window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY
 );
-const IMAGE_BUCKET = 'product-images';
 
 /* Tiny PostgREST client (no library needed). path is relative to /rest/v1/ */
 async function sb(path, { method = 'GET', body, prefer } = {}) {
@@ -308,7 +308,7 @@ const SEED_ORDERS = [
     seedOrder('ORD-2026-9100', 'pending', [['Corsair RM850x Shift 850W PSU', 139.99, 1]], '')
 ];
 const SEED_BOOKINGS = [
-    { id: 'SRV-5012', customer: 'Michael Tan', email: '', device: 'AMD Ryzen 5 Processor', type: 'Warranty Claim (Bent Pins)', details: '', status: 'Under Review' }
+    { id: 'SRV-5012', customer: 'Michael Tan', email: '', device: 'AMD Ryzen 5 Processor', type: 'Warranty Claim (Bent Pins)', details: 'Pins are bent on the bottom left corner.', status: 'Under Review' }
 ];
 
 [[KEY.users, SEED_USERS], [KEY.orders, SEED_ORDERS], [KEY.bookings, SEED_BOOKINGS], [KEY.reports, 0]]
@@ -579,125 +579,31 @@ const pages = {};
 
 pages.login = () => {
     const existing = currentUser();
-
-    if (existing) {
-        location.replace(homeFor(existing.role));
-        return;
-    }
-
-    $('#loginForm').addEventListener('submit', async e => {
+    if (existing) { location.replace(homeFor(existing.role)); return; }
+    $('#loginForm').addEventListener('submit', e => {
         e.preventDefault();
-
-        const email = $('#email').value.trim().toLowerCase();
-        const password = $('#password').value;
-
-        try {
-            formMessage('Signing in...', true);
-
-            const { data, error } =
-                await supabaseClient.auth.signInWithPassword({
-                    email,
-                    password
-                });
-
-            if (error) throw error;
-
-            const authUser = data.user;
-
-            let users = read(KEY.users, []);
-
-            let user = users.find(
-                u => u.email.toLowerCase() === authUser.email.toLowerCase()
-            );
-
-            if (!user) {
-                user = person({
-                    id: authUser.id,
-                    name: authUser.user_metadata?.full_name || 'Customer',
-                    username: authUser.email.split('@')[0],
-                    email: authUser.email,
-                    role: 'customer'
-                });
-
-                users.push(user);
-                write(KEY.users, users);
-            }
-
-            if (!user.active) {
-                await supabaseClient.auth.signOut();
-                return formMessage(
-                    'This account is suspended. Contact an administrator.'
-                );
-            }
-
-            write(KEY.session, { email: user.email });
-
-            location.href = homeFor(user.role);
-
-        } catch (err) {
-            formMessage(err.message || 'Unable to sign in.');
-        }
+        const email = $('#email').value.trim().toLowerCase(), password = $('#password').value;
+        const user = read(KEY.users, []).find(u => u.email.toLowerCase() === email && u.password === password);
+        if (!user) return formMessage('Incorrect email or password.');
+        if (!user.active) return formMessage('This account is suspended. Contact an administrator.');
+        write(KEY.session, { email: user.email });
+        location.href = homeFor(user.role);
     });
 };
 
 pages.signup = () => {
-    $('#signupForm').addEventListener('submit', async e => {
+    $('#signupForm').addEventListener('submit', e => {
         e.preventDefault();
-
-        const email = $('#email').value.trim().toLowerCase();
-        const password = $('#password').value;
-        const confirmPassword = $('#confirm-password').value;
+        const users = read(KEY.users, []);
+        const email = $('#email').value.trim().toLowerCase(), password = $('#password').value;
+        if (password.length < 6) return formMessage('Password must be at least 6 characters.');
+        if (password !== $('#confirm-password').value) return formMessage('Passwords do not match.');
+        if (users.some(u => u.email.toLowerCase() === email)) return formMessage('An account with this email already exists.');
         const name = $('#fullname').value.trim();
-
-        if (password.length < 6) {
-            return formMessage('Password must be at least 6 characters.');
-        }
-
-        if (password !== confirmPassword) {
-            return formMessage('Passwords do not match.');
-        }
-
-        try {
-            formMessage('Creating your account...', true);
-
-            const { data, error } = await supabaseClient.auth.signUp({
-                email,
-                password,
-                options: {
-                    data: {
-                        full_name: name
-                    }
-                }
-            });
-
-            if (error) throw error;
-
-            const users = read(KEY.users, []);
-
-            if (!users.some(u => u.email.toLowerCase() === email)) {
-                users.push(person({
-                    id: data.user.id,
-                    name,
-                    username: email.split('@')[0],
-                    email,
-                    role: 'customer'
-                }));
-
-                write(KEY.users, users);
-            }
-
-            formMessage(
-                'Account created! Please check your email if confirmation is required.',
-                true
-            );
-
-            setTimeout(() => {
-                location.href = 'login.html';
-            }, 2000);
-
-        } catch (err) {
-            formMessage(err.message || 'Unable to create account.');
-        }
+        users.push(person({ id: 'USR-' + String(users.length + 1).padStart(3, '0'), name, username: email.split('@')[0], email, password, role: 'customer' }));
+        write(KEY.users, users);
+        formMessage('Account created. Redirecting to sign in...', true);
+        setTimeout(() => { location.href = 'login.html'; }, 1000);
     });
 };
 
@@ -1159,6 +1065,7 @@ pages.admin = () => {
     const admin = guard(['admin']);
     if (!admin) return;
     const usersBody = $('#usersBody'), servicesBody = $('#servicesBody');
+    const serviceModal = $('#serviceModal'), serviceDetailsText = $('#serviceDetailsText');
 
     const renderMetrics = () => {
         $('#mRevenue').textContent = money(revenue());
@@ -1186,7 +1093,10 @@ pages.admin = () => {
             <tr data-id="${esc(b.id)}">
                 <td>#${esc(b.id)}</td><td>${esc(b.customer)}</td><td>${esc(b.device)}</td><td>${esc(b.type)}</td>
                 <td><span class="status ${statusClass[b.status]}">${esc(b.status)}</span></td>
-                <td class="actions">${b.status === 'Under Review' ? '<button class="btn btn-sm btn-soft" data-decide="Approved">Approve</button><button class="btn btn-sm btn-outline danger" data-decide="Rejected">Reject</button>' : ''}</td>
+                <td class="actions">
+                    <button class="btn btn-sm btn-outline" data-view-details><i class="fa-solid fa-eye"></i> View Issue</button>
+                    ${b.status === 'Under Review' ? '<button class="btn btn-sm btn-soft" data-decide="Approved">Approve</button><button class="btn btn-sm btn-outline danger" data-decide="Rejected">Reject</button>' : ''}
+                </td>
             </tr>`).join('') || '<tr><td colspan="6" class="table-empty">No service tickets yet.</td></tr>';
         renderMetrics();
     };
@@ -1206,6 +1116,17 @@ pages.admin = () => {
         toast('Account status updated.');
     });
     servicesBody.addEventListener('click', e => {
+        const viewBtn = e.target.closest('[data-view-details]');
+        if (viewBtn) {
+            const row = viewBtn.closest('tr');
+            const bookings = read(KEY.bookings, []);
+            const b = bookings.find(x => x.id === row.dataset.id);
+            if (b) {
+                serviceDetailsText.textContent = b.details || 'No description provided.';
+                serviceModal.showModal();
+            }
+            return;
+        }
         const btn = e.target.closest('[data-decide]');
         if (!btn) return;
         const bookings = read(KEY.bookings, []);
@@ -1213,6 +1134,9 @@ pages.admin = () => {
         write(KEY.bookings, bookings);
         renderServices(); toast(`Claim ${btn.dataset.decide.toLowerCase()}.`);
     });
+    $$('[data-close]', serviceModal).forEach(b => b.addEventListener('click', () => serviceModal.close()));
+    serviceModal.addEventListener('click', e => { if (e.target === serviceModal) serviceModal.close(); });
+
     $('#addUserBtn').addEventListener('click', () => {
         const name = (prompt('Full name of the new user:') || '').trim();
         const email = (prompt('Email address:') || '').trim().toLowerCase();
