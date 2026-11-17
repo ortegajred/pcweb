@@ -579,15 +579,64 @@ const pages = {};
 
 pages.login = () => {
     const existing = currentUser();
-    if (existing) { location.replace(homeFor(existing.role)); return; }
-    $('#loginForm').addEventListener('submit', e => {
+
+    if (existing) {
+        location.replace(homeFor(existing.role));
+        return;
+    }
+
+    $('#loginForm').addEventListener('submit', async e => {
         e.preventDefault();
-        const email = $('#email').value.trim().toLowerCase(), password = $('#password').value;
-        const user = read(KEY.users, []).find(u => u.email.toLowerCase() === email && u.password === password);
-        if (!user) return formMessage('Incorrect email or password.');
-        if (!user.active) return formMessage('This account is suspended. Contact an administrator.');
-        write(KEY.session, { email: user.email });
-        location.href = homeFor(user.role);
+
+        const email = $('#email').value.trim().toLowerCase();
+        const password = $('#password').value;
+
+        try {
+            formMessage('Signing in...', true);
+
+            const { data, error } =
+                await supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+            if (error) throw error;
+
+            const authUser = data.user;
+
+            let users = read(KEY.users, []);
+
+            let user = users.find(
+                u => u.email.toLowerCase() === authUser.email.toLowerCase()
+            );
+
+            if (!user) {
+                user = person({
+                    id: authUser.id,
+                    name: authUser.user_metadata?.full_name || 'Customer',
+                    username: authUser.email.split('@')[0],
+                    email: authUser.email,
+                    role: 'customer'
+                });
+
+                users.push(user);
+                write(KEY.users, users);
+            }
+
+            if (!user.active) {
+                await supabaseClient.auth.signOut();
+                return formMessage(
+                    'This account is suspended. Contact an administrator.'
+                );
+            }
+
+            write(KEY.session, { email: user.email });
+
+            location.href = homeFor(user.role);
+
+        } catch (err) {
+            formMessage(err.message || 'Unable to sign in.');
+        }
     });
 };
 
