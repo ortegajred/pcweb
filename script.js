@@ -641,18 +641,63 @@ pages.login = () => {
 };
 
 pages.signup = () => {
-    $('#signupForm').addEventListener('submit', e => {
+    $('#signupForm').addEventListener('submit', async e => {
         e.preventDefault();
-        const users = read(KEY.users, []);
-        const email = $('#email').value.trim().toLowerCase(), password = $('#password').value;
-        if (password.length < 6) return formMessage('Password must be at least 6 characters.');
-        if (password !== $('#confirm-password').value) return formMessage('Passwords do not match.');
-        if (users.some(u => u.email.toLowerCase() === email)) return formMessage('An account with this email already exists.');
+
+        const email = $('#email').value.trim().toLowerCase();
+        const password = $('#password').value;
+        const confirmPassword = $('#confirm-password').value;
         const name = $('#fullname').value.trim();
-        users.push(person({ id: 'USR-' + String(users.length + 1).padStart(3, '0'), name, username: email.split('@')[0], email, password, role: 'customer' }));
-        write(KEY.users, users);
-        formMessage('Account created. Redirecting to sign in...', true);
-        setTimeout(() => { location.href = 'login.html'; }, 1000);
+
+        if (password.length < 6) {
+            return formMessage('Password must be at least 6 characters.');
+        }
+
+        if (password !== confirmPassword) {
+            return formMessage('Passwords do not match.');
+        }
+
+        try {
+            formMessage('Creating your account...', true);
+
+            const { data, error } = await supabaseClient.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: name
+                    }
+                }
+            });
+
+            if (error) throw error;
+
+            const users = read(KEY.users, []);
+
+            if (!users.some(u => u.email.toLowerCase() === email)) {
+                users.push(person({
+                    id: data.user.id,
+                    name,
+                    username: email.split('@')[0],
+                    email,
+                    role: 'customer'
+                }));
+
+                write(KEY.users, users);
+            }
+
+            formMessage(
+                'Account created! Please check your email if confirmation is required.',
+                true
+            );
+
+            setTimeout(() => {
+                location.href = 'login.html';
+            }, 2000);
+
+        } catch (err) {
+            formMessage(err.message || 'Unable to create account.');
+        }
     });
 };
 
